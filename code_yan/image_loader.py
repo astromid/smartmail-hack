@@ -97,7 +97,11 @@ class ImageLoader(DataLoader):
         h, w, _ = image.shape
         if h == CROP_SIZE and w == CROP_SIZE:
             return image
-        assert h > CROP_SIZE and w > CROP_SIZE
+        try:
+            assert h > CROP_SIZE and w > CROP_SIZE
+        except AssertionError:
+            print(h, w, CROP_SIZE)
+            raise AssertionError
         h_start = np.random.randint(0, h - CROP_SIZE)
         w_start = np.random.randint(0, w - CROP_SIZE)
         return image[h_start:h_start + CROP_SIZE, w_start:w_start + CROP_SIZE]
@@ -124,8 +128,6 @@ class ImageLoader(DataLoader):
         h, w, _ = image.shape
         delta_h = max(CROP_SIZE - h, 0)
         delta_w = max(CROP_SIZE - w, 0)
-        if delta_h == 0 and delta_w == 0:
-            return image
         top, bottom = delta_h // 2, delta_h - (delta_h // 2)
         left, right = delta_w // 2, delta_w - (delta_w // 2)
         color = [255, 255, 255]
