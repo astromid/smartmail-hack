@@ -6,10 +6,11 @@ import models
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.models import load_model
 from keras import backend as K
+from keras.optimizers import Adam
 from glob import glob
 from sklearn.model_selection import train_test_split
 from image_loader import ImageLoader
-from task_config import TRAIN_DIR
+from task_config import ROOT_DIR, TRAIN_DIR
 from utils import LoggerCallback
 from sklearn.metrics import accuracy_score, classification_report, fbeta_score
 
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     np.random.seed(42)
-    MODEL_DIR = os.path.join('models', args.name)
+    MODEL_DIR = os.path.join(ROOT_DIR, 'models', args.name)
     CLF_NAME = args.name.split('-')[0]
     os.makedirs(MODEL_DIR, exist_ok=True)
     all_files = sorted(glob(os.path.join(TRAIN_DIR, '*', '*')))
@@ -59,10 +60,9 @@ if __name__ == '__main__':
         crops=args.crop
     )
     assert train_loader.n_class == val_loader.n_class
-    monitor = 'val_categorical_accuracy'
     check_acc = ModelCheckpoint(
         filepath=MODEL_PATH + '-frozen-acc-best.h5',
-        monitor=monitor,
+        monitor='val_categorical_accuracy',
         verbose=1,
         save_best_only=True
     )
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         save_best_only=True
     )
     lr_cb = ReduceLROnPlateau(
-        monitor=monitor,
+        monitor='val_categorical_accuracy',
         factor=0.2,
         patience=3,
         verbose=1,
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     )
     log_cb = LoggerCallback(log_path=MODEL_PATH)
     model_compile_args = {
-        'optimizer': 'adam',
+        'optimizer': Adam(),
         'loss': 'binary_crossentropy',
         'metrics': ['categorical_accuracy']
     }
@@ -100,15 +100,29 @@ if __name__ == '__main__':
         )
         model.save(MODEL_PATH + f'-ep{args.frozen_epochs}.h5')
         print("Frozen model saved successfully")
-        check_acc.filepath = MODEL_PATH + '-acc-best.h5'
-        check_loss.filepath = MODEL_PATH + '-loss-best.h5'
-        lr_cb.factor = 0.5
-        lr_cb.patience = 4
-        lr_cb.min_lr = 1e-9
         for layer in model.get_layer(CLF_NAME).layers:
             layer.trainable = True
         model.compile(**model_compile_args)
         model.summary()
+        check_acc = ModelCheckpoint(
+            filepath=MODEL_PATH + '-acc-best.h5',
+            monitor='val_categorical_accuracy',
+            verbose=1,
+            save_best_only=True
+        )
+        check_loss = ModelCheckpoint(
+            filepath=MODEL_PATH + '-loss-best.h5',
+            monitor='val_loss',
+            verbose=1,
+            save_best_only=True
+        )
+        lr_cb = ReduceLROnPlateau(
+            monitor='val_categorical_accuracy',
+            factor=0.5,
+            patience=4,
+            verbose=1,
+            min_lr=1e-9
+        )
         history = model.fit_generator(
             generator=train_loader,
             steps_per_epoch=len(train_loader),

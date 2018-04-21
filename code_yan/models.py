@@ -33,9 +33,9 @@ class PretrainedCLF:
         return input_
 
     def _top_classifier(self, x):
-        x = Dense(1024, activation='relu')(x)
-        x = Dropout(0.3)(x)
         x = Dense(512, activation='relu')(x)
         x = Dropout(0.3)(x)
-        out = Dense(self.n_class, activation='softmax')(x)
+        x = Dense(256, activation='relu')(x)
+        x = Dropout(0.3)(x)
+        out = Dense(self.n_class, activation='sigmoid')(x)
         return out
