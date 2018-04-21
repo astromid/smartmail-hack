@@ -73,7 +73,7 @@ class DataLoader(Sequence):
         if self.load_mode == 'only_batch':
             x = [sample for sample in self.p.imap(self._load_sample, x)]
         x = [sample for sample in self.p.imap(self._prepare_sample, x)]
-        if self.aug_config is not False:
+        if self.aug_config:
             x = [sample for sample in self.p.imap(self._augment_sample, x)]
         x = np.array(x).astype(np.float32)
         if self._preprocess_batch is not None:

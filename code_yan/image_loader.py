@@ -3,6 +3,7 @@ import numpy as np
 from skimage.exposure import adjust_gamma
 from base_dataloader import DataLoader
 from task_config import RESCALE_SIZE
+from task_config import CROP_SIZE
 from keras.applications import *
 
 # known pretrained networks
@@ -26,7 +27,9 @@ CLF2CLASS = {
 
 class ImageLoader(DataLoader):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, crops, *args, **kwargs):
+        self.crops = crops
+        self.crop_mode = None
         super().__init__(*args, **kwargs)
 
         if self.clf_name in CLF2MODULE:
@@ -52,11 +55,22 @@ class ImageLoader(DataLoader):
         return image
 
     def _prepare_sample(self, image):
-        image = cv2.resize(image, (RESCALE_SIZE, RESCALE_SIZE))
+        if self.crops:
+            # pad image to CROP_SIZE
+            image = self._pad_image(image)
+            # use random crops while training & validation
+            if self.mode != 'test':
+                image = self._random_crop_image(image)
+            # else took 5 crops
+            # TODO: TTA instead of random crop
+            else:
+                image = self._random_crop_image(image)
+        else:
+            image = cv2.resize(image, (RESCALE_SIZE, RESCALE_SIZE))
         return image
 
     def _augment_sample(self, image):
-        # TODO: flip, rot90, gamma, color, zoom?
+        # TODO: color? may be it's time to use imgaug
         # zoom
         # if np.random.rand() < 0.5:
         #     scale = np.random.choice([1.2, 1.5])
@@ -79,16 +93,41 @@ class ImageLoader(DataLoader):
         return image
 
     @staticmethod
-    def _crop_image(args):
-        image, side_len, center = args
+    def _random_crop_image(image):
         h, w, _ = image.shape
-        if h == side_len and w == side_len:
+        if h == CROP_SIZE and w == CROP_SIZE:
             return image
-        assert h > side_len and w > side_len
-        if center:
-            h_start = np.floor_divide(h - side_len, 2)
-            w_start = np.floor_divide(w - side_len, 2)
-        else:
-            h_start = np.random.randint(0, h - side_len)
-            w_start = np.random.randint(0, w - side_len)
-        return image[h_start:h_start + side_len, w_start:w_start + side_len]
+        assert h > CROP_SIZE and w > CROP_SIZE
+        h_start = np.random.randint(0, h - CROP_SIZE)
+        w_start = np.random.randint(0, w - CROP_SIZE)
+        return image[h_start:h_start + CROP_SIZE, w_start:w_start + CROP_SIZE]
+
+    @staticmethod
+    def _crop_image(args):
+        image, position = args
+        h, w, _ = image.shape
+        if position == 'center':
+            h_start = np.floor_divide(h - CROP_SIZE, 2)
+            w_start = np.floor_divide(w - CROP_SIZE, 2)
+        # TODO: crops
+        if position == 'top-left':
+            pass
+        if position == 'top-right':
+            pass
+        if position == 'bottom-left':
+            pass
+        if position == 'bottom-right':
+            pass
+
+    @staticmethod
+    def _pad_image(image):
+        h, w, _ = image.shape
+        delta_h = max(CROP_SIZE - h, 0)
+        delta_w = max(CROP_SIZE - w, 0)
+        if delta_h == 0 and delta_w == 0:
+            return image
+        top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+        left, right = delta_w // 2, delta_w - (delta_w // 2)
+        color = [255, 255, 255]
+        image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+        return image

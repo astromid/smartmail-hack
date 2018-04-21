@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from image_loader import ImageLoader
 from task_config import TRAIN_DIR
 from utils import LoggerCallback
-from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, fbeta_score
+from sklearn.metrics import accuracy_score, classification_report, fbeta_score
 
 
 if __name__ == '__main__':
@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--seed', type=int, default=12017952)
     parser.add_argument('-bal', '--balance', action='store_true', help="Enables sample class balancing")
     parser.add_argument('-aug', '--augmentation', action='store_true', help="Enables augmentation")
+    parser.add_argument('-cr', '--crop', action='store_true', help="Use crops instead of brainless rescaling")
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -47,13 +48,15 @@ if __name__ == '__main__':
         aug_config=args.augmentation,
         balance=args.balance,
         batch_size=args.batch_size,
-        clf_name=CLF_NAME
+        clf_name=CLF_NAME,
+        crops=args.crop
     )
     val_loader = ImageLoader(
         files=val_files,
         mode='val',
         batch_size=args.batch_size,
-        clf_name=CLF_NAME
+        clf_name=CLF_NAME,
+        crops=args.crop
     )
     assert train_loader.n_class == val_loader.n_class
     monitor = 'val_categorical_accuracy'
@@ -122,7 +125,8 @@ if __name__ == '__main__':
         files=test_files,
         mode='test',
         batch_size=args.batch_size,
-        clf_name=CLF_NAME
+        clf_name=CLF_NAME,
+        crops=args.crop
     )
     model_files = sorted(glob(os.path.join(MODEL_DIR, '*.h5')))
     print(f"Found {len(model_files)} models to evaluate")
@@ -141,10 +145,8 @@ if __name__ == '__main__':
             labels = [test_loader.id2label[id_] for id_ in ids]
             accuracy = accuracy_score(test_loader.labels, labels)
             print(f"accuracy: {accuracy}")
+            experiment.log_metric(model_name + '_accuracy', accuracy)
+            f2 = fbeta_score(test_loader.labels, labels, 2.0, average='macro')
+            print(f"F2: {f2}")
+            experiment.log_metric(model_name + '_F2', f2)
             print(classification_report(test_loader.labels, labels))
-            y_true = [test_loader.label2id[label] for label in test_loader.labels]
-            roc_auc = roc_auc_score(y_true, probs[:, 1])
-            print(f"ROC-AUC: {roc_auc}")
-            f_2 = fbeta_score(test_loader.labels, labels, 2.0)
-            print(f"F2: {f_2}")
-    
