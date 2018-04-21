@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# PyCharm
+.idea/
+
+# Data folders
+original_data/
+data/
+data_modified/
