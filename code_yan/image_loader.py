@@ -57,7 +57,11 @@ class ImageLoader(DataLoader):
     def _prepare_sample(self, image):
         if self.crops:
             # pad image to CROP_SIZE
-            image = self._pad_image(image)
+            # image = self._pad_image(image)
+            # rescale instead of padding
+            h, w, _ = image.shape
+            if h < CROP_SIZE or w < CROP_SIZE:
+                image = cv2.resize(image, (CROP_SIZE, CROP_SIZE))
             # use random crops while training & validation
             if self.mode != 'test':
                 image = self._random_crop_image(image)
