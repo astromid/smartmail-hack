@@ -1,7 +1,6 @@
 import os
 import argparse
 import numpy as np
-from comet_ml import Experiment
 import models
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.models import load_model
@@ -16,7 +15,6 @@ from sklearn.metrics import accuracy_score, classification_report, fbeta_score
 
 
 if __name__ == '__main__':
-    experiment = Experiment("gaV3YiEaKRsBEXbkpMKaaRv8D")
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', help="Name of the network in format {base_clf}-{number}")
     parser.add_argument('-e', '--epochs', type=int, help="Total # of epochs to train")
@@ -60,24 +58,12 @@ if __name__ == '__main__':
         crops=args.crop
     )
     assert train_loader.n_class == val_loader.n_class
-    check_acc = ModelCheckpoint(
-        filepath=MODEL_PATH + '-frozen-acc-best.h5',
-        monitor='val_categorical_accuracy',
-        verbose=1,
-        save_best_only=True
-    )
-    check_loss = ModelCheckpoint(
-        filepath=MODEL_PATH + '-frozen-loss-best.h5',
-        monitor='val_loss',
-        verbose=1,
-        save_best_only=True
-    )
     lr_cb = ReduceLROnPlateau(
         monitor='val_categorical_accuracy',
         factor=0.2,
         patience=3,
         verbose=1,
-        min_lr=1e-5
+        min_lr=2e-5
     )
     log_cb = LoggerCallback(log_path=MODEL_PATH)
     model_compile_args = {
@@ -88,53 +74,52 @@ if __name__ == '__main__':
     model = models.PretrainedCLF(CLF_NAME, train_loader.n_class).model
     model.compile(**model_compile_args)
     model.summary()
-    with experiment.train():
-        frozen_history = model.fit_generator(
-            generator=train_loader,
-            steps_per_epoch=len(train_loader),
-            epochs=args.frozen_epochs,
-            verbose=1,
-            callbacks=[check_acc, check_loss, lr_cb, log_cb],
-            validation_data=val_loader,
-            validation_steps=len(val_loader)
-        )
-        model.save(MODEL_PATH + f'-ep{args.frozen_epochs}.h5')
-        print("Frozen model saved successfully")
-        for layer in model.get_layer(CLF_NAME).layers:
-            layer.trainable = True
-        model.compile(**model_compile_args)
-        model.summary()
-        check_acc = ModelCheckpoint(
-            filepath=MODEL_PATH + '-acc-best.h5',
-            monitor='val_categorical_accuracy',
-            verbose=1,
-            save_best_only=True
-        )
-        check_loss = ModelCheckpoint(
-            filepath=MODEL_PATH + '-loss-best.h5',
-            monitor='val_loss',
-            verbose=1,
-            save_best_only=True
-        )
-        lr_cb = ReduceLROnPlateau(
-            monitor='val_categorical_accuracy',
-            factor=0.5,
-            patience=4,
-            verbose=1,
-            min_lr=1e-9
-        )
-        history = model.fit_generator(
-            generator=train_loader,
-            steps_per_epoch=len(train_loader),
-            epochs=args.epochs,
-            verbose=1,
-            callbacks=[check_acc, check_loss, lr_cb, log_cb],
-            validation_data=val_loader,
-            validation_steps=len(val_loader),
-            initial_epoch=args.frozen_epochs
-        )
-        model.save(MODEL_PATH + f"-ep{args.epochs}.h5")
-        print("Models saved successfully")
+    frozen_history = model.fit_generator(
+        generator=train_loader,
+        steps_per_epoch=len(train_loader),
+        epochs=args.frozen_epochs,
+        verbose=1,
+        callbacks=[lr_cb, log_cb],
+        validation_data=val_loader,
+        validation_steps=len(val_loader)
+    )
+    model.save(MODEL_PATH + f'-ep{args.frozen_epochs}.h5')
+    print("Frozen model saved successfully")
+    for layer in model.get_layer(CLF_NAME).layers:
+        layer.trainable = True
+    model.compile(**model_compile_args)
+    model.summary()
+    check_acc = ModelCheckpoint(
+        filepath=MODEL_PATH + '-acc-best.h5',
+        monitor='val_categorical_accuracy',
+        verbose=1,
+        save_best_only=True
+    )
+    check_loss = ModelCheckpoint(
+        filepath=MODEL_PATH + '-loss-best.h5',
+        monitor='val_loss',
+        verbose=1,
+        save_best_only=True
+    )
+    lr_cb = ReduceLROnPlateau(
+        monitor='val_categorical_accuracy',
+        factor=0.5,
+        patience=4,
+        verbose=1,
+        min_lr=1e-9
+    )
+    history = model.fit_generator(
+        generator=train_loader,
+        steps_per_epoch=len(train_loader),
+        epochs=args.epochs,
+        verbose=1,
+        callbacks=[check_acc, check_loss, lr_cb, log_cb],
+        validation_data=val_loader,
+        validation_steps=len(val_loader),
+        initial_epoch=args.frozen_epochs
+    )
+    model.save(MODEL_PATH + f"-ep{args.epochs}.h5")
+    print("Models saved successfully")
     test_loader = ImageLoader(
         files=test_files,
         mode='test',
@@ -150,17 +135,14 @@ if __name__ == '__main__':
         model = load_model(file)
         print("-" * 25)
         print(f"Model: {model_name}")
-        with experiment.test():
-            probs = model.predict_generator(
-                generator=test_loader,
-                steps=len(test_loader),
-                verbose=1)
-            ids = np.argmax(probs, axis=1)
-            labels = [test_loader.id2label[id_] for id_ in ids]
-            accuracy = accuracy_score(test_loader.labels, labels)
-            print(f"accuracy: {accuracy}")
-            experiment.log_metric(model_name + '_accuracy', accuracy)
-            f2 = fbeta_score(test_loader.labels, labels, 2.0, average='macro')
-            print(f"F2: {f2}")
-            experiment.log_metric(model_name + '_F2', f2)
-            print(classification_report(test_loader.labels, labels))
+        probs = model.predict_generator(
+            generator=test_loader,
+            steps=len(test_loader),
+            verbose=1
+        )
+        ids = np.argmax(probs, axis=1)
+        labels = [test_loader.id2label[id_] for id_ in ids]
+        accuracy = accuracy_score(test_loader.labels, labels)
+        f2 = fbeta_score(test_loader.labels, labels, 2.0, average='macro')
+        f1 = fbeta_score(test_loader.labels, labels, 1.0, average='macro')
+        print(f"Test: acc: {accuracy}, F1: {f1}, F2: {f2}")
