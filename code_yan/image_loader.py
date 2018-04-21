@@ -95,15 +95,8 @@ class ImageLoader(DataLoader):
     @staticmethod
     def _random_crop_image(image):
         h, w, _ = image.shape
-        if h == CROP_SIZE and w == CROP_SIZE:
-            return image
-        try:
-            assert h > CROP_SIZE and w > CROP_SIZE
-        except AssertionError:
-            print(h, w, CROP_SIZE)
-            raise AssertionError
-        h_start = np.random.randint(0, h - CROP_SIZE)
-        w_start = np.random.randint(0, w - CROP_SIZE)
+        h_start = np.random.randint(0, max(h - CROP_SIZE, 1))
+        w_start = np.random.randint(0, max(w - CROP_SIZE, 1))
         return image[h_start:h_start + CROP_SIZE, w_start:w_start + CROP_SIZE]
 
     @staticmethod
