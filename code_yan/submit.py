@@ -6,7 +6,7 @@ from keras.models import load_model
 from keras import backend as K
 from glob import glob
 from image_loader import ImageLoader
-from task_config import ROOT_DIR, TEST_DIR, TASK_NAME
+from task_config import ROOT_DIR, TEST_DIR, TASK_NAME, TRAIN_DIR
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     possible_labels = sorted(np.unique(all_labels))
     id2label = {i: label for i, label in enumerate(possible_labels)}
     test_files = sorted(glob(os.path.join(TEST_DIR, '*')))
-    test_loader = ImageLoader(files=test_files, mode='test', **TEST_CONFIG)
+    test_loader = ImageLoader(files=test_files, mode='test', crops=None, **TEST_CONFIG)
     MODEL_PATH = os.path.join(MODEL_DIR, args.name)
     model_name = os.path.basename(MODEL_PATH)
     model = load_model(MODEL_PATH)

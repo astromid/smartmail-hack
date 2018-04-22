@@ -5,6 +5,7 @@ from keras.utils import Sequence, to_categorical
 from multiprocessing.pool import ThreadPool
 from sklearn.utils.class_weight import compute_sample_weight
 from tqdm import tqdm
+from task_config import RESCALE_SIZE
 
 # supported modes
 LOAD_MODES = ['full', 'only_batch']
@@ -57,9 +58,7 @@ class DataLoader(Sequence):
             print("Clean-up failed samples:")
             for idx in range(self.len_):
                 if loaded_samples[idx] is None:
-                    loaded_samples.pop(idx)
-                    dropped_label = self.labels.pop(idx)
-                    print(f"Label {dropped_label} for file {self.samples[idx]} has been dropped")
+                    loaded_samples[idx] = np.zeros((RESCALE_SIZE, RESCALE_SIZE, 3))
             self.samples = loaded_samples
             self.len_ = len(self.samples)
             print(f"Successfully loaded {self.len_} {self.mode} samples")
