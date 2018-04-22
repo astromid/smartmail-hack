@@ -1,8 +1,9 @@
 from keras.models import Model
-from keras.layers import Dense, Dropout, Input
+from keras.layers import Dense, Dropout, Input, GlobalMaxPooling2D
 from image_loader import CLF2MODULE, CLF2CLASS
 from task_config import RESCALE_SIZE
 from keras.applications import *
+from keras_contrib.applications import *
 
 
 class PretrainedCLF:
@@ -18,10 +19,9 @@ class PretrainedCLF:
         print(f"Using {self.class_} as backbone")
         backbone = self.backbone(
             include_top=False,
-            weights='imagenet',
-            pooling='max'
         )
         x = backbone(i)
+        x = GlobalMaxPooling2D()(x)
         out = self._top_classifier(x)
         self.model = Model(i, out)
         for layer in self.model.get_layer(self.clf_name).layers:

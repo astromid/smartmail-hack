@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from image_loader import ImageLoader
 from task_config import ROOT_DIR, TRAIN_DIR
 from utils import LoggerCallback
-from sklearn.metrics import accuracy_score, classification_report, fbeta_score
+from sklearn.metrics import accuracy_score, fbeta_score
 
 
 if __name__ == '__main__':
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     )
     lr_cb = ReduceLROnPlateau(
         monitor='val_categorical_accuracy',
-        factor=0.5,
+        factor=0.3,
         patience=4,
         verbose=1,
         min_lr=1e-9

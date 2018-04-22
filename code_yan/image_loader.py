@@ -5,6 +5,7 @@ from base_dataloader import DataLoader
 from task_config import RESCALE_SIZE
 from task_config import CROP_SIZE
 from keras.applications import *
+from keras_contrib.applications import *
 
 # known pretrained networks
 CLF2MODULE = {
@@ -13,7 +14,9 @@ CLF2MODULE = {
     'densenet169':  'densenet',
     'densenet201':  'densenet',
     'resnet50':     'resnet50',
-    'xception':     'xception'
+    'xception':     'xception',
+    'inception_resnet_v2': 'inception_resnet_v2',
+    'ror':          'ror'
 }
 CLF2CLASS = {
     'densenet40':   'DenseNet40',
@@ -21,7 +24,9 @@ CLF2CLASS = {
     'densenet169':  'DenseNet169',
     'densenet201':  'DenseNet201',
     'resnet50':     'ResNet50',
-    'xception':     'Xception'
+    'xception':     'Xception',
+    'inception_resnet_v2': 'InceptionResNetV2',
+    'ror':          'ResidualOfResidual'
 }
 
 

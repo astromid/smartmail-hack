@@ -53,7 +53,7 @@ class DataLoader(Sequence):
                     pbar.update()
             assert len(loaded_samples) == len(self.labels)
             # clean-up failed samples (None)
-            print("\nClean-up failed samples:")
+            print("Clean-up failed samples:")
             for idx in range(self.len_):
                 if loaded_samples[idx] is None:
                     loaded_samples.pop(idx)
