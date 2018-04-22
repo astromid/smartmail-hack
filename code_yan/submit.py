@@ -36,10 +36,14 @@ if __name__ == '__main__':
         verbose=1)
     ids = np.argmax(probs, axis=1)
     labels = [id2label[id_] for id_ in ids]
-    data = {
-        'file': test_loader.files,
-        'category': labels
-    }
+    sub = pd.DataFrame()
+    files = test_loader.files
+    for idx, file in enumerate(files):
+        if len(file.split('.')) > 2:
+            files[idx] = file.split('.')[0] + '.' + file.split('.')[1]
+    sub['file'] = files
+    sub['category'] = labels
     sub_path = os.path.join(SUB_DIR, f'{model_name}-sub.csv')
-    pd.DataFrame(data).to_csv(sub_path, index=False)
+    sub.to_csv(sub_path, index=False)
     print(f"Submit {sub_path} created successfully")
+
