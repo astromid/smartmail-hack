@@ -33,14 +33,7 @@ if __name__ == '__main__':
     os.makedirs(MODEL_DIR, exist_ok=True)
     all_files = sorted(glob(os.path.join(TRAIN_DIR, '*', '*')))
     all_labels = [os.path.split(os.path.dirname(file))[-1] for file in all_files]
-    train_val_files, test_files, train_val_labels, test_labels = train_test_split(
-        all_files,
-        all_labels,
-        test_size=0.2,
-        random_state=42,
-        stratify=all_labels
-    )
-    train_files, val_files = train_test_split(train_val_files, test_size=0.1, random_state=42, stratify=train_val_labels)
+    train_files, val_files = train_test_split(all_files, test_size=0.1, random_state=42, stratify=all_labels)
     MODEL_PATH = os.path.join(MODEL_DIR, CLF_NAME)
     train_loader = ImageLoader(
         files=train_files,
@@ -120,29 +113,3 @@ if __name__ == '__main__':
     )
     model.save(MODEL_PATH + f"-ep{args.epochs}.h5")
     print("Models saved successfully")
-    test_loader = ImageLoader(
-        files=test_files,
-        mode='test',
-        batch_size=args.batch_size,
-        clf_name=CLF_NAME,
-        crops=args.crop
-    )
-    model_files = sorted(glob(os.path.join(MODEL_DIR, '*.h5')))
-    print(f"Found {len(model_files)} models to evaluate")
-    for file in model_files:
-        K.clear_session()
-        model_name = os.path.basename(file)
-        model = load_model(file)
-        print("-" * 25)
-        print(f"Model: {model_name}")
-        probs = model.predict_generator(
-            generator=test_loader,
-            steps=len(test_loader),
-            verbose=1
-        )
-        ids = np.argmax(probs, axis=1)
-        labels = [test_loader.id2label[id_] for id_ in ids]
-        accuracy = accuracy_score(test_loader.labels, labels)
-        f2 = fbeta_score(test_loader.labels, labels, 2.0, average='macro')
-        f1 = fbeta_score(test_loader.labels, labels, 1.0, average='macro')
-        print(f"Test: acc: {accuracy}, F1: {f1}, F2: {f2}")

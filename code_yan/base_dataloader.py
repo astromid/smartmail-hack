@@ -17,6 +17,7 @@ class DataLoader(Sequence):
                  batch_size=16, aug_config=False,
                  clf_name=None, load_mode='full',
                  mode='train'):
+        self.files = sorted(files)
         self.balance = balance
         self.batch_size = batch_size
         self.aug_config = aug_config
@@ -36,7 +37,7 @@ class DataLoader(Sequence):
             print(f"Correct modes: {DATA_MODES}")
             raise NameError
 
-        self.samples = sorted(files)
+        self.samples = self.files
         self.labels = [os.path.split(os.path.dirname(file))[-1] for file in self.samples]
         self.len_ = len(self.samples)
         self.possible_labels = sorted(np.unique(self.labels))
