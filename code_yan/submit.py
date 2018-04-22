@@ -20,7 +20,11 @@ if __name__ == '__main__':
         'batch_size': args.batch_size,
         'clf_name': args.name.split('-')[0]
     }
-    test_files = sorted(glob(os.path.join(TEST_DIR, '*', '*')))
+    all_files = sorted(glob(os.path.join(TRAIN_DIR, '*', '*')))
+    all_labels = [os.path.split(os.path.dirname(file))[-1] for file in all_files]
+    possible_labels = sorted(np.unique(all_labels))
+    id2label = {i: label for i, label in enumerate(possible_labels)}
+    test_files = sorted(glob(os.path.join(TEST_DIR, '*')))
     test_loader = ImageLoader(files=test_files, mode='test', **TEST_CONFIG)
     MODEL_PATH = os.path.join(MODEL_DIR, args.name)
     model_name = os.path.basename(MODEL_PATH)
@@ -31,7 +35,7 @@ if __name__ == '__main__':
         steps=len(test_loader),
         verbose=1)
     ids = np.argmax(probs, axis=1)
-    labels = [test_loader.id2label[id_] for id_ in ids]
+    labels = [id2label[id_] for id_ in ids]
     data = {
         'file': test_loader.files,
         'category': labels
