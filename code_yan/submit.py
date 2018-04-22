@@ -37,7 +37,7 @@ if __name__ == '__main__':
         labels = [test_loader.id2label[id_] for id_ in ids]
         data = {
             'file': test_loader.files,
-            'label': labels
+            'category': labels
         }
         sub_path = os.path.join(SUB_DIR, f'{file}-sub.csv')
         pd.DataFrame(data).to_csv(sub_path, index=False)

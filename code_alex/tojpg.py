@@ -1,4 +1,4 @@
-data_dir = 'data/train'
+data_dir = 'data/test'
 import glob
 import os
 paths = glob.glob(data_dir + '/*/*')
