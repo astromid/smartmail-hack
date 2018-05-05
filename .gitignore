@@ -107,3 +107,6 @@ ENV/
 original_data/
 data/
 data_modified/
+
+# models
+models/
