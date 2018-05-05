@@ -1,2 +1,2 @@
 # smartmail-hack
-SmartMail Hackathon Task 1 from Mail.Ru Group
+Code for the 1st place in SmartMailHack:Task1 from Mail.Ru Group
